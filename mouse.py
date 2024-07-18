@@ -11,21 +11,19 @@ LINE_COLOR = (0, 255, 0)  # Green
 LINE_THICKNESS = 2
 SCALING_FACTOR = 5.0  # Factor to amplify the cursor movement
 
-
 def init_webcam():
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         raise RuntimeError("Error: Could not open video device.")
     return cap
 
-
 def process_frame(frame):
     frame = cv2.flip(frame, 1)
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     return frame, rgb_frame
 
-
 def draw_landmarks(frame, hands, drawing_utils):
+    landmarks = None
     for hand in hands:
         drawing_utils.draw_landmarks(frame, hand)
         landmarks = hand.landmark
@@ -42,7 +40,6 @@ def draw_landmarks(frame, hands, drawing_utils):
             cv2.line(frame, (start_x, start_y), (end_x, end_y), LINE_COLOR, LINE_THICKNESS)
     return landmarks
 
-
 def get_landmark_coordinates(landmarks, frame_width, frame_height):
     coords = {}
     for id, landmark in enumerate(landmarks):
@@ -51,7 +48,6 @@ def get_landmark_coordinates(landmarks, frame_width, frame_height):
         coords[id] = (x, y)
     return coords
 
-
 def map_to_screen(coords, screen_width, screen_height, frame_width, frame_height):
     mapped_coords = {}
     for id, (x, y) in coords.items():
@@ -59,7 +55,6 @@ def map_to_screen(coords, screen_width, screen_height, frame_width, frame_height
         mapped_y = screen_height * y / frame_height
         mapped_coords[id] = (mapped_x, mapped_y)
     return mapped_coords
-
 
 def move_cursor(index_coords, plocx, plocy, smoothening):
     index_x, index_y = index_coords
@@ -73,9 +68,8 @@ def move_cursor(index_coords, plocx, plocy, smoothening):
     pyautogui.moveTo(clocx, clocy)
     return clocx, clocy
 
-
 def detect_gestures(coords, thumb_coords, click_time, click_threshold, single_click_flag, left_dragging):
-    thumb_x, thumb_y = thumb_coords
+    _, thumb_y = thumb_coords
 
     # Left click
     if abs(coords[8][1] - thumb_y) < 70:
@@ -120,22 +114,6 @@ def detect_gestures(coords, thumb_coords, click_time, click_threshold, single_cl
 
     return click_time, single_click_flag, left_dragging
 
-
-def add_user_instructions(frame):
-    instructions = [
-        "Virtual Mouse Instructions:",
-        "1. Move cursor: Use Index Finger",
-        "2. Left Click: Bring Thumb close to Index Finger",
-        "3. Right Click: Bring Thumb close to Middle Finger",
-        "4. Drag: Hold Thumb close to Ring Finger",
-        "5. Scroll: Thumbs Up to Scroll Up, Thumbs Down to Scroll Down"
-    ]
-    y0, dy = 20, 30
-    for i, line in enumerate(instructions):
-        y = y0 + i * dy
-        cv2.putText(frame, line, (10, y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
-
-
 def main():
     cap = init_webcam()
     hand_detector = mp.solutions.hands.Hands()
@@ -170,14 +148,13 @@ def main():
                 mapped_coords, mapped_coords[4], click_time, click_threshold, single_click_flag, left_dragging
             )
 
-        add_user_instructions(frame)
+    
         cv2.imshow('Virtual Mouse', frame)
         if cv2.waitKey(1) & 0xFF == 27:  # Press 'Esc' to exit
             break
 
     cap.release()
     cv2.destroyAllWindows()
-
 
 if __name__ == "__main__":
     main()
